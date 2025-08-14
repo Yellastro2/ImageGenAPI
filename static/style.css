@@ -1,0 +1,154 @@
+/* Custom styles for the DALL-E API documentation */
+
+body {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    min-height: 100vh;
+}
+
+.card {
+    border: 1px solid var(--bs-border-color);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+pre {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+code {
+    color: #e9ecef;
+    background: transparent;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.table {
+    --bs-table-bg: rgba(255, 255, 255, 0.05);
+}
+
+.table-bordered {
+    border: 1px solid var(--bs-border-color);
+}
+
+.table-bordered td,
+.table-bordered th {
+    border: 1px solid var(--bs-border-color);
+}
+
+.display-4 {
+    font-weight: 300;
+    letter-spacing: -0.02em;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.alert {
+    border: 1px solid var(--bs-border-color);
+    backdrop-filter: blur(5px);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Responsive image styles */
+img.img-fluid {
+    max-height: 500px;
+    object-fit: contain;
+}
+
+/* Loading animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.btn:disabled {
+    animation: pulse 2s infinite;
+}
+
+/* Scrollbar styles for dark theme */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bs-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bs-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-info);
+}
+
+/* Syntax highlighting for code blocks */
+.bg-dark {
+    background-color: #1a1a1a !important;
+}
+
+/* Enhanced form styling */
+.form-control:focus,
+.form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Icon spacing */
+.fas,
+.far {
+    width: 1.2em;
+    text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    pre {
+        font-size: 0.8rem;
+        max-height: 200px;
+    }
+    
+    img.img-fluid {
+        max-height: 300px;
+    }
+}
