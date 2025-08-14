@@ -513,6 +513,7 @@ dependencies = [
     { name = "flask" },
     { name = "flask-sqlalchemy" },
     { name = "gunicorn" },
+    { name = "httpx" },
     { name = "openai" },
     { name = "psycopg2-binary" },
 ]
@@ -523,6 +524,7 @@ requires-dist = [
     { name = "flask", specifier = ">=3.1.1" },
     { name = "flask-sqlalchemy", specifier = ">=3.1.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "openai", specifier = ">=1.99.9" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
 ]

@@ -1,5 +1,6 @@
 import os
 import logging
+import httpx
 from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 
@@ -9,12 +10,31 @@ logging.basicConfig(level=logging.DEBUG)
 # Create Flask app
 app = Flask(__name__)
 
-# Initialize OpenAI client
+# Initialize OpenAI client with proxy support
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+HTTP_PROXY = os.environ.get("HTTP_PROXY")
+HTTPS_PROXY = os.environ.get("HTTPS_PROXY")
+
 if not OPENAI_API_KEY:
     logging.warning("OPENAI_API_KEY not found in environment variables")
 
-openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+# Create HTTP client with proxy if provided
+http_client = None
+if HTTP_PROXY or HTTPS_PROXY:
+    proxies = {}
+    if HTTP_PROXY:
+        proxies["http://"] = HTTP_PROXY
+        logging.info(f"Using HTTP proxy: {HTTP_PROXY}")
+    if HTTPS_PROXY:
+        proxies["https://"] = HTTPS_PROXY
+        logging.info(f"Using HTTPS proxy: {HTTPS_PROXY}")
+    
+    http_client = httpx.Client(proxy=HTTPS_PROXY or HTTP_PROXY)
+
+openai_client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    http_client=http_client
+) if OPENAI_API_KEY else None
 
 @app.route('/')
 def index():
