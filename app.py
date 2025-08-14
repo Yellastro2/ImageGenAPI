@@ -3,12 +3,14 @@ import logging
 import httpx
 from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
+from flask_cors import CORS
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Create Flask app
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "https://tilda.ru"}})
 
 # Initialize OpenAI client with selective proxy support
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
