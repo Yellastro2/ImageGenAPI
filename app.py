@@ -10,30 +10,24 @@ logging.basicConfig(level=logging.DEBUG)
 # Create Flask app
 app = Flask(__name__)
 
-# Initialize OpenAI client with proxy support
+# Initialize OpenAI client with selective proxy support
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-HTTP_PROXY = os.environ.get("HTTP_PROXY")
-HTTPS_PROXY = os.environ.get("HTTPS_PROXY")
+OPENAI_PROXY = os.environ.get("OPENAI_PROXY")  # Специальная переменная только для OpenAI
 
 if not OPENAI_API_KEY:
     logging.warning("OPENAI_API_KEY not found in environment variables")
 
-# Create HTTP client with proxy if provided
-http_client = None
-if HTTP_PROXY or HTTPS_PROXY:
-    proxies = {}
-    if HTTP_PROXY:
-        proxies["http://"] = HTTP_PROXY
-        logging.info(f"Using HTTP proxy: {HTTP_PROXY}")
-    if HTTPS_PROXY:
-        proxies["https://"] = HTTPS_PROXY
-        logging.info(f"Using HTTPS proxy: {HTTPS_PROXY}")
-    
-    http_client = httpx.Client(proxy=HTTPS_PROXY or HTTP_PROXY)
+# Create HTTP client with proxy only for OpenAI if specified
+openai_http_client = None
+if OPENAI_PROXY:
+    logging.info(f"Using proxy for OpenAI requests: {OPENAI_PROXY}")
+    openai_http_client = httpx.Client(proxy=OPENAI_PROXY)
+else:
+    logging.info("No proxy specified for OpenAI - using direct connection")
 
 openai_client = OpenAI(
     api_key=OPENAI_API_KEY,
-    http_client=http_client
+    http_client=openai_http_client
 ) if OPENAI_API_KEY else None
 
 @app.route('/')
@@ -166,7 +160,9 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "service": "DALL-E Image Generation API",
-        "openai_configured": openai_client is not None
+        "openai_configured": openai_client is not None,
+        "proxy_configured": OPENAI_PROXY is not None,
+        "proxy_url": OPENAI_PROXY if OPENAI_PROXY else "direct connection"
     })
 
 @app.errorhandler(404)
