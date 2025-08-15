@@ -1,6 +1,6 @@
 # Overview
 
-A Flask-based web application that provides a REST API for both image and text generation using OpenAI's APIs. The application features a simple web interface with comprehensive API documentation and two main endpoints: one for DALL-E image generation and another for GPT text generation. Built with a minimalist architecture focusing on ease of use and integration, with optional proxy support for OpenAI requests.
+A Flask-based web application that provides a REST API for image generation, text generation, and image analysis using OpenAI's APIs. The application features a simple web interface with comprehensive API documentation and supports DALL-E 3 image generation, GPT text generation, and GPT-4o Vision for image analysis. Built with a minimalist architecture focusing on ease of use and integration, with optional proxy support for OpenAI requests.
 
 # User Preferences
 
@@ -16,9 +16,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Backend Architecture
 - **Web Framework**: Flask with minimal configuration and CORS support
-- **API Design**: RESTful endpoints for both image and text generation:
-  - `/api/generate-image` - DALL-E image generation using POST method
-  - `/api/generate-text` - GPT text generation using POST method
+- **API Design**: RESTful endpoints for image generation, text generation, and image analysis:
+  - `/api/generate-image` - DALL-E 3 image generation using POST method
+  - `/api/generate-text` - GPT text generation and image analysis using POST method
+    - Text mode: GPT-4, GPT-4-turbo, GPT-3.5-turbo
+    - Image analysis mode: GPT-4o (auto-switched when image_url provided)
 - **Request Handling**: JSON payload processing with comprehensive error handling
 - **Response Format**: Standardized JSON responses with success/error states and usage metrics
 - **Proxy Support**: Optional HTTP proxy configuration specifically for OpenAI API requests

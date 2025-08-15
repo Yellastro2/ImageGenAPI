@@ -1,0 +1,13 @@
+# Python Dependencies для OpenAI API Wrapper
+# Эти пакеты установлены в проекте
+
+flask==3.0.3          # Web framework для создания API
+flask-cors==4.0.1     # CORS поддержка для кроссдоменных запросов
+openai==1.40.6        # Официальный Python клиент OpenAI
+gunicorn==23.0.0      # WSGI HTTP сервер для продакшена
+httpx==0.27.0         # HTTP клиент для async запросов
+
+# Для установки в другом окружении используйте:
+# pip install flask flask-cors openai gunicorn httpx
+
+# Или скопируйте файл pyproject.toml из этого проекта

@@ -224,7 +224,7 @@ def generate_text():
 
         # Get optional parameters
         max_tokens = data.get('max_tokens', 1000)
-        model = data.get('model', 'gpt-4')
+        model = data.get('model', 'gpt-4o')
         image_url = data.get('image_url', '').strip()
         
         # Auto-switch to vision model if image is provided
