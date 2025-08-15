@@ -10,10 +10,16 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Create Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": [
-                                    "https://tilda.ru",
-    "https://tilda.сс"
-                                ]}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            r"https://*.tilda.ru",
+            r"https://*.tilda.сс",
+            r"https://*.tistools.ru",
+            r"https://*.vseinstrumenti.ru"
+        ]
+    }
+})
 
 # Initialize OpenAI client with selective proxy support
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -162,13 +168,14 @@ def generate_image():
 @app.route('/api/generate-text', methods=['POST'])
 def generate_text():
     """
-    Generate text using OpenAI GPT API
+    Generate text using OpenAI GPT API with optional image input
     
     Expected JSON payload:
     {
         "prompt": "Your text prompt or question",
+        "image_url": "https://example.com/image.jpg" (optional, for vision tasks),
         "max_tokens": 1000 (optional, defaults to 1000),
-        "model": "gpt-4" (optional, defaults to gpt-4)
+        "model": "gpt-4" (optional, defaults to gpt-4, auto-switches to gpt-4-vision-preview if image_url provided)
     }
     
     Returns:
@@ -176,7 +183,8 @@ def generate_text():
         "success": true,
         "text": "Generated text response",
         "prompt": "The original prompt",
-        "model": "gpt-4"
+        "model": "gpt-4",
+        "has_image": false
     }
     """
     try:
@@ -217,6 +225,12 @@ def generate_text():
         # Get optional parameters
         max_tokens = data.get('max_tokens', 1000)
         model = data.get('model', 'gpt-4')
+        image_url = data.get('image_url', '').strip()
+        
+        # Auto-switch to vision model if image is provided
+        has_image = bool(image_url)
+        if has_image and model in ['gpt-4', 'gpt-4-turbo']:
+            model = 'gpt-4o'
         
         # Validate max_tokens
         if not isinstance(max_tokens, int) or max_tokens < 1 or max_tokens > 4000:
@@ -227,7 +241,7 @@ def generate_text():
             }), 400
 
         # Validate model
-        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo']
+        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o']
         if model not in valid_models:
             return jsonify({
                 "success": False,
@@ -235,14 +249,45 @@ def generate_text():
                 "message": f"Model must be one of: {', '.join(valid_models)}"
             }), 400
 
-        logging.info(f"Generating text with model {model}, prompt: {prompt[:100]}...")
+        # Validate image URL if provided
+        if image_url:
+            if not (image_url.startswith('http://') or image_url.startswith('https://')):
+                return jsonify({
+                    "success": False,
+                    "error": "Invalid image URL",
+                    "message": "Image URL must start with http:// or https://"
+                }), 400
+
+        logging.info(f"Generating text with model {model}, prompt: {prompt[:100]}... {'with image' if has_image else ''}")
+
+        # Prepare messages based on whether image is provided
+        if has_image:
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url
+                            }
+                        }
+                    ]
+                }
+            ]
+        else:
+            messages = [
+                {"role": "user", "content": prompt}
+            ]
 
         # Generate text using OpenAI GPT
         response = openai_client.chat.completions.create(
             model=model,
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
+            messages=messages,
             max_tokens=max_tokens,
             temperature=0.7
         )
@@ -259,6 +304,8 @@ def generate_text():
             "text": generated_text,
             "prompt": prompt,
             "model": model,
+            "has_image": has_image,
+            "image_url": image_url if has_image else None,
             "tokens_used": response.usage.total_tokens if response.usage else None
         })
 

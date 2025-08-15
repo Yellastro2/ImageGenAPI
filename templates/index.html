@@ -86,7 +86,13 @@
                                     <td><code>model</code></td>
                                     <td>string</td>
                                     <td>Нет</td>
-                                    <td>Модель GPT: gpt-4, gpt-4-turbo, gpt-3.5-turbo (по умолчанию: gpt-4)</td>
+                                    <td>Модель GPT: gpt-4, gpt-4-turbo, gpt-3.5-turbo, gpt-4o (по умолчанию: gpt-4, автопереключение на gpt-4o при изображении)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>image_url</code></td>
+                                    <td>string</td>
+                                    <td>Нет</td>
+                                    <td>URL изображения для анализа (автоматически переключает модель на gpt-4o)</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -105,7 +111,20 @@
   "text": "Привет! У меня все отлично, спасибо. Как у тебя дела?",
   "prompt": "Привет! Как дела?",
   "model": "gpt-3.5-turbo",
+  "has_image": false,
+  "image_url": null,
   "tokens_used": 43
+}</code></pre>
+
+                        <h6>Пример ответа с анализом изображения:</h6>
+                        <pre class="bg-dark p-3 rounded"><code>{
+  "success": true,
+  "text": "На изображении показан деревянный настил, проходящий через зеленое поле...",
+  "prompt": "Что изображено на этой картинке?",
+  "model": "gpt-4o",
+  "has_image": true,
+  "image_url": "https://example.com/image.jpg",
+  "tokens_used": 1189
 }</code></pre>
 
                         <h6>Пример ошибки:</h6>
@@ -133,12 +152,20 @@
   }'</code></pre>
 
                         <h5>cURL - Генерация текста</h5>
-                        <pre class="bg-dark p-3 rounded mb-4"><code>curl -X POST {{ request.url_root }}api/generate-text \
+                        <pre class="bg-dark p-3 rounded mb-3"><code>curl -X POST {{ request.url_root }}api/generate-text \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "Объясни квантовую физику простыми словами",
     "max_tokens": 500,
     "model": "gpt-4"
+  }'</code></pre>
+
+                        <h5>cURL - Анализ изображения</h5>
+                        <pre class="bg-dark p-3 rounded mb-4"><code>curl -X POST {{ request.url_root }}api/generate-text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Что изображено на этой картинке?",
+    "image_url": "https://example.com/image.jpg"
   }'</code></pre>
 
                         <!-- Python Example -->
