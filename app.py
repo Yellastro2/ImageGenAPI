@@ -10,7 +10,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Create Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "https://tilda.ru"}})
+CORS(app, resources={r"/api/*": {"origins": [
+                                    "https://tilda.ru",
+    "https://tilda.сс"
+                                ]}})
 
 # Initialize OpenAI client with selective proxy support
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -154,6 +157,138 @@ def generate_image():
                 "success": False,
                 "error": "Internal server error",
                 "message": "An unexpected error occurred while generating the image."
+            }), 500
+
+@app.route('/api/generate-text', methods=['POST'])
+def generate_text():
+    """
+    Generate text using OpenAI GPT API
+    
+    Expected JSON payload:
+    {
+        "prompt": "Your text prompt or question",
+        "max_tokens": 1000 (optional, defaults to 1000),
+        "model": "gpt-4" (optional, defaults to gpt-4)
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "text": "Generated text response",
+        "prompt": "The original prompt",
+        "model": "gpt-4"
+    }
+    """
+    try:
+        # Check if OpenAI client is available
+        if not openai_client:
+            return jsonify({
+                "success": False,
+                "error": "OpenAI API key not configured",
+                "message": "Please set OPENAI_API_KEY environment variable"
+            }), 500
+
+        # Get JSON data from request
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Invalid JSON",
+                "message": "Request must contain valid JSON data"
+            }), 400
+
+        # Validate prompt
+        prompt = data.get('prompt', '').strip()
+        if not prompt:
+            return jsonify({
+                "success": False,
+                "error": "Missing prompt",
+                "message": "Please provide a 'prompt' field with your text query"
+            }), 400
+
+        if len(prompt) > 4000:
+            return jsonify({
+                "success": False,
+                "error": "Prompt too long",
+                "message": "Prompt must be 4000 characters or less"
+            }), 400
+
+        # Get optional parameters
+        max_tokens = data.get('max_tokens', 1000)
+        model = data.get('model', 'gpt-4')
+        
+        # Validate max_tokens
+        if not isinstance(max_tokens, int) or max_tokens < 1 or max_tokens > 4000:
+            return jsonify({
+                "success": False,
+                "error": "Invalid max_tokens",
+                "message": "max_tokens must be an integer between 1 and 4000"
+            }), 400
+
+        # Validate model
+        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo']
+        if model not in valid_models:
+            return jsonify({
+                "success": False,
+                "error": "Invalid model",
+                "message": f"Model must be one of: {', '.join(valid_models)}"
+            }), 400
+
+        logging.info(f"Generating text with model {model}, prompt: {prompt[:100]}...")
+
+        # Generate text using OpenAI GPT
+        response = openai_client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=max_tokens,
+            temperature=0.7
+        )
+
+        if response and response.choices and len(response.choices) > 0:
+            generated_text = response.choices[0].message.content
+        else:
+            raise Exception("No text data returned from OpenAI API")
+        
+        logging.info("Text generated successfully")
+
+        return jsonify({
+            "success": True,
+            "text": generated_text,
+            "prompt": prompt,
+            "model": model,
+            "tokens_used": response.usage.total_tokens if response.usage else None
+        })
+
+    except Exception as e:
+        logging.error(f"Error generating text: {str(e)}")
+        
+        # Handle specific OpenAI errors
+        if "content_policy_violation" in str(e).lower():
+            return jsonify({
+                "success": False,
+                "error": "Content policy violation",
+                "message": "The prompt violates OpenAI's content policy. Please try a different query."
+            }), 400
+        elif "rate_limit" in str(e).lower():
+            return jsonify({
+                "success": False,
+                "error": "Rate limit exceeded",
+                "message": "Too many requests. Please try again later."
+            }), 429
+        elif "insufficient_quota" in str(e).lower():
+            return jsonify({
+                "success": False,
+                "error": "Quota exceeded",
+                "message": "OpenAI API quota has been exceeded."
+            }), 429
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Internal server error",
+                "message": "An unexpected error occurred while generating text."
             }), 500
 
 @app.route('/health')

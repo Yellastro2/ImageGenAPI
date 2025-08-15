@@ -18,7 +18,7 @@
                         <i class="fas fa-image text-primary me-3"></i>
                         DALL-E Image Generation API
                     </h1>
-                    <p class="lead">Минималистичное API для генерации изображений через OpenAI DALL-E</p>
+                    <p class="lead">Минималистичное API для генерации изображений и текста через OpenAI</p>
                 </div>
 
                 <!-- API Documentation -->
@@ -27,13 +27,14 @@
                         <h3><i class="fas fa-code me-2"></i>API Документация</h3>
                     </div>
                     <div class="card-body">
-                        <h5>Endpoint для генерации изображений</h5>
+                        <h5>Endpoints для работы с OpenAI API</h5>
                         <div class="bg-dark p-3 rounded mb-3">
-                            <code>POST /api/generate-image</code>
+                            <code>POST /api/generate-image</code> - Генерация изображений<br>
+                            <code>POST /api/generate-text</code> - Генерация текста
                         </div>
                         
-                        <h6>Параметры запроса (JSON):</h6>
-                        <table class="table table-bordered">
+                        <h6>Параметры для генерации изображений (/api/generate-image):</h6>
+                        <table class="table table-bordered mb-4">
                             <thead>
                                 <tr>
                                     <th>Параметр</th>
@@ -58,12 +59,53 @@
                             </tbody>
                         </table>
 
-                        <h6>Пример успешного ответа:</h6>
+                        <h6>Параметры для генерации текста (/api/generate-text):</h6>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Параметр</th>
+                                    <th>Тип</th>
+                                    <th>Обязательный</th>
+                                    <th>Описание</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>prompt</code></td>
+                                    <td>string</td>
+                                    <td>Да</td>
+                                    <td>Текстовый запрос или вопрос (макс. 4000 символов)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>max_tokens</code></td>
+                                    <td>integer</td>
+                                    <td>Нет</td>
+                                    <td>Максимальное количество токенов в ответе: 1-4000 (по умолчанию: 1000)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>model</code></td>
+                                    <td>string</td>
+                                    <td>Нет</td>
+                                    <td>Модель GPT: gpt-4, gpt-4-turbo, gpt-3.5-turbo (по умолчанию: gpt-4)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h6>Пример успешного ответа (изображение):</h6>
                         <pre class="bg-dark p-3 rounded"><code>{
   "success": true,
   "image_url": "https://oaidalleapiprodscus.blob.core.windows.net/...",
   "prompt": "A beautiful sunset over mountains",
   "size": "1024x1024"
+}</code></pre>
+
+                        <h6>Пример успешного ответа (текст):</h6>
+                        <pre class="bg-dark p-3 rounded"><code>{
+  "success": true,
+  "text": "Привет! У меня все отлично, спасибо. Как у тебя дела?",
+  "prompt": "Привет! Как дела?",
+  "model": "gpt-3.5-turbo",
+  "tokens_used": 43
 }</code></pre>
 
                         <h6>Пример ошибки:</h6>
@@ -81,13 +123,22 @@
                         <h3><i class="fas fa-terminal me-2"></i>Примеры использования</h3>
                     </div>
                     <div class="card-body">
-                        <!-- cURL Example -->
-                        <h5>cURL</h5>
-                        <pre class="bg-dark p-3 rounded mb-4"><code>curl -X POST {{ request.url_root }}api/generate-image \
+                        <!-- cURL Examples -->
+                        <h5>cURL - Генерация изображений</h5>
+                        <pre class="bg-dark p-3 rounded mb-3"><code>curl -X POST {{ request.url_root }}api/generate-image \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "A futuristic city with flying cars at sunset",
     "size": "1024x1024"
+  }'</code></pre>
+
+                        <h5>cURL - Генерация текста</h5>
+                        <pre class="bg-dark p-3 rounded mb-4"><code>curl -X POST {{ request.url_root }}api/generate-text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Объясни квантовую физику простыми словами",
+    "max_tokens": 500,
+    "model": "gpt-4"
   }'</code></pre>
 
                         <!-- Python Example -->

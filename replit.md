@@ -1,6 +1,6 @@
 # Overview
 
-A Flask-based web application that provides a REST API for generating images using OpenAI's DALL-E API. The application features a simple web interface with API documentation and a single endpoint that accepts text prompts and returns generated image URLs. Built with a minimalist architecture focusing on ease of use and integration.
+A Flask-based web application that provides a REST API for both image and text generation using OpenAI's APIs. The application features a simple web interface with comprehensive API documentation and two main endpoints: one for DALL-E image generation and another for GPT text generation. Built with a minimalist architecture focusing on ease of use and integration, with optional proxy support for OpenAI requests.
 
 # User Preferences
 
@@ -15,16 +15,22 @@ Preferred communication style: Simple, everyday language.
 - **Icons**: Font Awesome for visual elements
 
 ## Backend Architecture
-- **Web Framework**: Flask with minimal configuration
-- **API Design**: RESTful single endpoint (`/api/generate-image`) using POST method
-- **Request Handling**: JSON payload processing with error handling
-- **Response Format**: Standardized JSON responses with success/error states
+- **Web Framework**: Flask with minimal configuration and CORS support
+- **API Design**: RESTful endpoints for both image and text generation:
+  - `/api/generate-image` - DALL-E image generation using POST method
+  - `/api/generate-text` - GPT text generation using POST method
+- **Request Handling**: JSON payload processing with comprehensive error handling
+- **Response Format**: Standardized JSON responses with success/error states and usage metrics
+- **Proxy Support**: Optional HTTP proxy configuration specifically for OpenAI API requests
 - **Logging**: Python's built-in logging module for debugging and monitoring
 
 ## Configuration Management
-- **Environment Variables**: OpenAI API key and session secret management
+- **Environment Variables**: 
+  - `OPENAI_API_KEY` - Required for both image and text generation
+  - `OPENAI_PROXY` - Optional HTTP proxy for OpenAI requests only
 - **Error Handling**: Graceful degradation when API key is not configured
 - **Development Mode**: Debug mode enabled for local development
+- **Proxy Configuration**: Selective proxy usage only for OpenAI API calls, other requests use direct connection
 
 ## Security Considerations
 - **Session Management**: Flask session secret for potential future authentication
