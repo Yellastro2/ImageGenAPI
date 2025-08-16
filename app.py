@@ -4,9 +4,19 @@ import httpx
 from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 from flask_cors import CORS
+import base64
+import uuid
+import mimetypes
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+
+# Глушим httpx дебаг (который дергает OpenAI SDK)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("httpcore").setLevel(logging.ERROR)
+logging.getLogger("openai").setLevel(logging.ERROR)
+# Отключаем полностью
+logging.getLogger("openai").disabled = True
 
 # Create Flask app
 app = Flask(__name__)
@@ -20,6 +30,8 @@ CORS(app, resources={
         ]
     }
 })
+app.config['GENERATED_FOLDER'] = os.path.join(app.root_path, 'static', 'generated')
+os.makedirs(app.config['GENERATED_FOLDER'], exist_ok=True)
 
 # Initialize OpenAI client with selective proxy support
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -110,29 +122,49 @@ def generate_image():
             }), 400
 
         logging.info(f"Generating image with prompt: {prompt[:100]}...")
+        model = data.get("model", "gpt-image-1")
 
-        # Generate image using OpenAI DALL-E
-        # the newest OpenAI model is "dall-e-3" which was released after knowledge cutoff
-        # do not change this unless explicitly requested by the user
-        response = openai_client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            n=1,
-            size=size,
-            quality="standard"
-        )
+        params = {
+            "model": model,
+            "prompt": prompt,
+            "size": size
+        }
 
-        if response and response.data and len(response.data) > 0:
+        if model == "gpt-image-1":
+            params["quality"] = "medium"
+        elif model == "dall-e-3":
+            params["quality"] = "standard"
+            params["n"] = 1
+            params["response_format"] = "url"
+
+        response = openai_client.images.generate(**params)
+
+        if not response or not response.data:
+            return jsonify({"success": False, "error": "No image data"}), 500
+
+        if model == "gpt-image-1":
+            # Сохраняем base64 в файл
+            b64_data = response.data[0].b64_json
+            img_bytes = base64.b64decode(b64_data)
+            filename = f"{uuid.uuid4().hex}.png"
+            file_path = os.path.join(app.config['GENERATED_FOLDER'], filename)
+            with open(file_path, "wb") as f:
+                f.write(img_bytes)
+            image_url = f"{request.host_url}static/generated/{filename}"
+            logging.info(f"Image saved to {file_path}")
+
+        else:  # dall-e-3
             image_url = response.data[0].url
-        else:
-            raise Exception("No image data returned from OpenAI API")
-        
+            filename = "dall-e-3.png"
+
         logging.info("Image generated successfully")
+        logging.info(f"Image URL: {image_url}")
 
         return jsonify({
             "success": True,
             "image_url": image_url,
             "prompt": prompt,
+            "filename": filename,
             "size": size
         })
 
@@ -249,40 +281,72 @@ def generate_text():
                 "message": f"Model must be one of: {', '.join(valid_models)}"
             }), 400
 
+        logging.info(f"Generating text with model {model}, prompt: {prompt[:100]}... {'with image' if has_image else ''}")
         # Validate image URL if provided
         if image_url:
             if not (image_url.startswith('http://') or image_url.startswith('https://')):
-                return jsonify({
-                    "success": False,
-                    "error": "Invalid image URL",
-                    "message": "Image URL must start with http:// or https://"
-                }), 400
+                # Локальный файл — проверяем и готовим как файл
+                
+                local_path = image_url
+                if not os.path.isabs(local_path):
+                    local_path = os.path.join(app.config['GENERATED_FOLDER'], image_url)
 
-        logging.info(f"Generating text with model {model}, prompt: {prompt[:100]}... {'with image' if has_image else ''}")
+                if not os.path.exists(local_path):
+                    return jsonify({
+                        "success": False,
+                        "error": "File not found",
+                        "message": f"Local image file not found: {local_path}"
+                    }), 400
 
-        # Prepare messages based on whether image is provided
-        if has_image:
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "image_url",
+                mime_type, _ = mimetypes.guess_type(local_path)
+                if mime_type is None:
+                    mime_type = "image/png"
+                logging.info(f"Local image file found: {local_path} with MIME type {mime_type}")
+
+                with open(local_path, "rb") as f:
+                    image_data = f.read()
+
+
+                b64 = base64.b64encode(image_data).decode("utf-8")
+
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url",
                             "image_url": {
-                                "url": image_url
+                                "url": f"data:{mime_type};base64,{b64}"
+                                }
                             }
+                        ]
+                    }
+                ]
+            else:
+
+                # Prepare messages based on whether image is provided
+                if has_image:
+                    messages = [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": prompt
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": image_url
+                                    }
+                                }
+                            ]
                         }
                     ]
-                }
-            ]
-        else:
-            messages = [
-                {"role": "user", "content": prompt}
-            ]
+                else:
+                    messages = [
+                        {"role": "user", "content": prompt}
+                    ]
 
         # Generate text using OpenAI GPT
         response = openai_client.chat.completions.create(
@@ -298,6 +362,7 @@ def generate_text():
             raise Exception("No text data returned from OpenAI API")
         
         logging.info("Text generated successfully")
+        logging.info(f"Generated text: {generated_text[:100]}...")
 
         return jsonify({
             "success": True,
