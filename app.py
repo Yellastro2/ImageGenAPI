@@ -273,13 +273,13 @@ def generate_text():
             }), 400
 
         # Validate model
-        valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o']
-        if model not in valid_models:
-            return jsonify({
-                "success": False,
-                "error": "Invalid model",
-                "message": f"Model must be one of: {', '.join(valid_models)}"
-            }), 400
+        # valid_models = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o']
+        # if model not in valid_models:
+        #     return jsonify({
+        #         "success": False,
+        #         "error": "Invalid model",
+        #         "message": f"Model must be one of: {', '.join(valid_models)}"
+        #     }), 400
 
         logging.info(f"Generating text with model {model}, prompt: {prompt[:100]}... {'with image' if has_image else ''}")
         # Validate image URL if provided
@@ -351,9 +351,7 @@ def generate_text():
         # Generate text using OpenAI GPT
         response = openai_client.chat.completions.create(
             model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=0.7
+            messages=messages
         )
 
         if response and response.choices and len(response.choices) > 0:
